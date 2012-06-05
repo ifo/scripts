@@ -1,10 +1,22 @@
-input = io.open("input.txt", "r")
-output = io.open("output.txt", "w")
+input = io.open("ROBO-COMMON.LOG", "r")
+output = "" --io.open("output.txt", "w")
 prevline = ""
 lastnumline = ""
+getoutputname = true
+
+--[[
+limit = 500
+i = 1
+--]]
 
 function testline(l)
-	return string.find(l, '^%s*%d')
+	if string.find(l, '^%s*%d') or string.find(l, 'New Dir') then
+		return true
+	else
+		return false
+	end
+	-- original function:
+	--return string.find(l, '^%s*%d')
 end
 
 function getfilepath(l)
@@ -13,15 +25,42 @@ end
 
 function getfilename(l)
 	l = string.match(l, '\t.*\t~?%$?(.+)')
-	--l = string.match(l, '~?%$?(.+)')
 	return l or ""
+end
+
+function openoutput(l)
+	local file, msg = true, nil
+	l = string.match(l, ':%s(.*)')
+	l = string.gsub(l, ':', '.')
+	l = "RoboLog from "..l..".txt"
+
+	repeat -- check file existence until a file does not exist with that name
+		file, msg = io.open(l, "r")
+		if file then
+			io.close(file)
+			l = "1 - "..l
+		end
+	until not file
+
+	output = io.open(l, "w")
+
+	--[[ -- first attempt at the above repeat section - did not work
+	while true do
+		local f = io.open(l, "r")
+		if f ~= nil then
+			io.close(f)
+			l = "1 - "..l
+		else
+			io.close(f)
+			break
+		end
+	end
+	]]
 end
 
 while true do
 	local line = input:read()
 	if line == nil then break end
-
-	--local lout = nil
 
 	local prevtest = testline(prevline)
 	local linetest = testline(line)
@@ -38,23 +77,16 @@ while true do
 		end
 
 		if filename ~= nil and filename ~= "" then
-			output:write(filepath..filename.."\n\n")
+			output:write(filepath.."\t"..filename.."\n")
+			--print(filepath.."\t"..filename.."\n")
 		end
-		--[[
-
-
-		if prevtest then
-			--print(prevline.."\n"..line)
-		else
-			--print(lastnumline.."\n"..line)
-		end
-
-
-		print(getfilepath(prevline)..getfilename(line))
-		]]
 	else
-		--print(prevline.."\n" .. line)
-		--print(line)
+		-- don't print the line
+	end
+
+	if getoutputname and string.find(line, 'Started') then
+		openoutput(line)
+		getoutputname = false -- don't open another file
 	end
 
 	if not linetest and prevtest then
@@ -62,5 +94,11 @@ while true do
 	end
 
 	prevline = line
-	--output:write(lout)
+
+	--[[
+	i = i + 1
+	if i > limit then
+		break
+	end
+	--]]
 end
