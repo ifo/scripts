@@ -25,7 +25,60 @@ end
 
 function getfilename(l)
 	l = string.match(l, '\t.*\t~?%$?(.+)')
-	return l or ""
+	return filenameblacklist(l) or ""
+end
+
+function filenameblacklist(l)
+	if l == nil then
+		return ""
+	end
+	flag = true
+
+	fileblacklist = {"Thumbs.db"}
+	if string.find(l, "Thumbs.db") then
+		return ""
+	end
+
+	fileend = string.match(l, '.+([.].-)$')
+	if fileend ~= nil then
+		fileend = string.lower(fileend)
+	else
+		return ""
+	end
+	--return fileend
+	--print(fileend,l)
+
+	filetypeblacklist = {
+		".jpeg",
+		".jpg",
+		".ds_store",
+		".lnk",
+		".pdf",
+		".tif",
+		".tmp",
+		".img",
+		".png",
+		".bmp",
+		".mpg",
+		".mp4",
+		".mov",
+		".thm",
+		".trashes",
+		".wma",
+		".ico"
+	}
+	for i,v in ipairs(filetypeblacklist) do
+		if fileend == v then
+			flag = false
+			break
+		end
+	end
+
+	if flag then
+		return l
+	else
+		return ""
+	end
 end
 
 function openoutput(l)
@@ -34,28 +87,18 @@ function openoutput(l)
 	l = string.gsub(l, ':', '.')
 	l = "RoboLog from "..l..".txt"
 
+	try = l
+	num = 1
 	repeat -- check file existence until a file does not exist with that name
-		file, msg = io.open(l, "r")
+		file, msg = io.open(try, "r")
 		if file then
 			io.close(file)
-			l = "1 - "..l
+			try = num.." - "..l
 		end
+		num = num + 1
 	until not file
 
-	output = io.open(l, "w")
-
-	--[[ -- first attempt at the above repeat section - did not work
-	while true do
-		local f = io.open(l, "r")
-		if f ~= nil then
-			io.close(f)
-			l = "1 - "..l
-		else
-			io.close(f)
-			break
-		end
-	end
-	]]
+	output = io.open(try, "w")
 end
 
 while true do
@@ -78,7 +121,9 @@ while true do
 
 		if filename ~= nil and filename ~= "" then
 			output:write(filepath.."\t"..filename.."\n")
-			--print(filepath.."\t"..filename.."\n")
+			--output:write(string.match(filename, '.+([.].-)$').."\t"..filename.."\n")
+			--print(filepath.."\t"..filename)
+			--print(filename)
 		end
 	else
 		-- don't print the line
