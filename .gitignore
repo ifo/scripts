@@ -1,3 +1,7 @@
-*.sw*
+# vim ignores
+*.swp
+*.swo
+
+# text file ignores
 *.txt
 *.log
